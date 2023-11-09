@@ -4,8 +4,7 @@ to the internal Service Bus Queue for each client."""
 import logging
 import azure.functions as func
 
-from modules import list_of_clients, messages_to_queue
-from modules.utilities import config, logger
+from modules import list_of_clients, messages_to_queue, config, logger
 
 log = logging.getLogger(name="log." + __name__)
 logger.set_up(level=logging.DEBUG)
