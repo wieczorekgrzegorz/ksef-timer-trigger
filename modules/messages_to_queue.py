@@ -13,8 +13,10 @@ log = logging.getLogger(name="log." + __name__)
 
 def get_scheduled_enqueue_time_utc(message_str: str, delay_multiplier: int) -> datetime.datetime:
     """Calculates scheduled enqueue time in UTC from message_str's iteration and delay_multiplier.\n
-    Parses iteration int from message_str using json.loads.
-    In case of ValueError, tries to parse using ast.literal_eval."""
+    Accepts message_str in both json and literal_eval format
+    .
+    In case of message_str being in literal_eval string message (which would raise ValueError when trying json.loads),
+    tries to parse using ast.literal_eval."""
 
     try:
         iteration = json.loads(s=message_str)["iteration"]
@@ -25,7 +27,7 @@ def get_scheduled_enqueue_time_utc(message_str: str, delay_multiplier: int) -> d
 
 
 def build_list_of_service_bus_messages(
-    list_of_messages: list, delay_multiplier: int, timeout: int, func_get_scheduled_enqueue_time_utc: Callable
+    list_of_messages: list, delay_multiplier: int, func_get_scheduled_enqueue_time_utc: Callable
 ) -> list[ServiceBusMessage]:
     """Builds a list of ServiceBusMessages with scheduled enqueue time (a.k.a 'delay')."""
 
@@ -34,9 +36,9 @@ def build_list_of_service_bus_messages(
         scheduled_enqueue_time_utc = func_get_scheduled_enqueue_time_utc(
             message_str=message, delay_multiplier=delay_multiplier
         )
-        list_of_service_bus_messages.append(
-            ServiceBusMessage(body=message, timeout=timeout, scheduled_enqueue_time_utc=scheduled_enqueue_time_utc)
-        )
+        service_bus_message = ServiceBusMessage(body=message, scheduled_enqueue_time_utc=scheduled_enqueue_time_utc)
+        list_of_service_bus_messages.append(service_bus_message)
+
     log.info(msg=f"Built a list of {len(list_of_service_bus_messages)} messages.")
 
     return list_of_service_bus_messages
@@ -62,7 +64,6 @@ def send(
     servicebus_conn_str: str,
     queue_name: str,
     list_of_messages: list,
-    timeout: int = 120,
     delay_multiplier: int = 2,
 ) -> None:
     """Sends a scheduled message to specified Service Bus Queue.
@@ -88,7 +89,6 @@ def send(
         list_of_service_bus_messages = build_list_of_service_bus_messages(
             list_of_messages=list_of_messages,
             delay_multiplier=delay_multiplier,
-            timeout=timeout,
             func_get_scheduled_enqueue_time_utc=get_scheduled_enqueue_time_utc,
         )
 

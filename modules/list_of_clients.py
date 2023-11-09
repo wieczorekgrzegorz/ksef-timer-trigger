@@ -71,18 +71,21 @@ def validate_response_from_storage_table_connector(response_json: dict, mandator
         raise RuntimeError("No records found in ClientsConfig table.")
 
 
-def checked_recently(datetime_string: str, target_timedelta: datetime.timedelta) -> bool:
-    """Checks if the client was checked for KSeF data within last >>target<<
-        The purpose of that is to avoid rechecking accounts that have been successfully checked in last run,\
-            in order to focus on those that resulted in errors only."""
+def checked_recently(datetime_string: Optional[str], target_timedelta: datetime.timedelta) -> bool:
+    """Checks if the client was checked for KSeF data within last >>target_timedelta<<
+    The purpose of that is to avoid rechecking accounts that have been successfully checked in last run,\
+    in order to focus on those that resulted in errors only."""
+
+    if (datetime_string is None) or (datetime_string == "null"):
+        # If datetime_string is "null" or "None", it means it's a default value from the table
+        # and the client was never checked before. Ergo, it should be checked now.
+        return False
+
     try:
         utc_now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
         last_successful_run = datetime.datetime.fromisoformat(datetime_string)
         return (utc_now - last_successful_run) < target_timedelta
-    except ValueError:
-        # if datetime_string is not in isoformat, it means it's a default value from the table, "null" or "None"
-        return False
-    except TypeError as err:
+    except (ValueError, TypeError) as err:
         log.error(msg=f"TypeError: {err}")
         raise err
 
