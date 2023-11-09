@@ -14,7 +14,7 @@ app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 @app.function_name(name="TimerTrigger")
 @app.schedule(
-    schedule="0 * * * * *",
+    schedule="0 0 * * * *",  # 1st sec, 1st min of every hour
     arg_name="timer",
     run_on_startup=True,
     use_monitor=False,
