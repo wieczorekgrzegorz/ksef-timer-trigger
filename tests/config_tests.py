@@ -6,7 +6,7 @@ from unittest.mock import patch
 import context  # pylint: disable=import-error, wrong-import-position
 
 
-class TestConfig(context.BaseTestCase):
+class TestConfig(context.BaseTestCase):  # pylint: disable=too-few-public-methods
     """Tests for config module."""
 
     @patch.dict(
@@ -23,7 +23,7 @@ class TestConfig(context.BaseTestCase):
         """Tests whether environment variables are correctly set."""
         # pylint: disable=import-outside-toplevel, no-name-in-module, E0401:import-error
         # importing in this place intentionally to mock environment variables
-        from modules.utilities import config
+        from modules import config
 
         self.assertEqual(first=config.STORAGE_TABLE_CONNECTOR_ACCESS_POINT, second="mock_access_point")
         self.assertEqual(first=config.STORAGE_TABLE_CONNECTOR_API_KEY, second="mock_api_key")

@@ -4,7 +4,6 @@
 Mocks environment variables and inserts main app folder to PATH.
 Turns off logging for tested modules.
 """
-import os
 from pathlib import PurePath as path
 import sys
 import unittest
@@ -13,15 +12,6 @@ from unittest.mock import patch
 
 # adding main app folder to PATH
 sys.path.insert(0, str(path(__file__).parents[1]))
-
-
-# # define global variables for tests
-# # Reason: So every test uses same mock values for environment variables
-# # Reason 2: tests would fail with KeyError("AZURE_COSMOSDB_CONNECTION_STRING")
-# #           exception when importing function_app
-# os.environ["AZURE_COSMOSDB_CONNECTION_STRING"] = "mock_connection_string"
-# os.environ["DATABASE_ID"] = "mock_database_id"
-# os.environ["CONTAINER_ID"] = "mock_container_id"
 
 
 class BaseTestCase(unittest.TestCase):
@@ -45,8 +35,8 @@ class BaseTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         print(f"\nRUNNING TESTS FOR: {cls.__name__}.")
-        patch("modules.send_msg_to_queue.log").start()
-        patch("modules.timer_trigger.log").start()
+        patch("modules.messages_to_queue.log").start()
+        patch("modules.list_of_clients.log").start()
 
     @classmethod
     def tearDownClass(cls) -> None:
