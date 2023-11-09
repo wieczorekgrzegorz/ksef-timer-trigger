@@ -15,18 +15,6 @@ ITERATION: int = 0
 HEADERS: dict = {"Content-Type": "application/json"}
 
 
-def build_request_body(table_name: str, operation: str, row_key: str) -> str:
-    """Builds JSON-serialized request body for query_clients_config.main()."""
-
-    return json.dumps(
-        obj={
-            "operation": operation,
-            "table_name": table_name,
-            "entity": {"RowKey": row_key},
-        }
-    )
-
-
 def query_clients_config_table(
     storage_acc_access_point: str,
     timeout: int,
@@ -136,16 +124,16 @@ def create_list_of_messages(
             }
 
             try:
-                body = json.dumps(obj=message)
+                list_of_messages.append(json.dumps(obj=message))
             except TypeError as e:
                 log.error(msg=f"TypeError while serializing message: {message}")
                 raise e
 
-            list_of_messages.append(body)
-
     if not list_of_messages:
         # If no messages are left after filtering out, break the program with sys.exit(): SystemExit
         sys.exit("No new messages to send.")
+
+    log.info(msg=f"Defined list of {len(list_of_messages)} clients to check KSeF for.")
 
     return list_of_messages
 
@@ -191,7 +179,13 @@ def get(  # pylint: disable=R0913:too-many-arguments
         ]
     """
 
-    request_body = build_request_body(table_name=table_name, operation=operation, row_key=row_key)
+    request_body = json.dumps(
+        obj={
+            "operation": operation,
+            "table_name": table_name,
+            "entity": {"RowKey": row_key},
+        }
+    )
 
     log.debug(msg="Querying ClientsConfig for list of NIPs to check.")
     response_json = query_clients_config_table(
