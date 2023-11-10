@@ -4,23 +4,24 @@ to the internal Service Bus Queue for each client."""
 import logging
 import azure.functions as func
 
-from modules import list_of_clients, messages_to_queue, config, logger
+from modules import list_of_clients, messages_to_queue
+from modules.utilities import config, custom_logger
+
 
 log = logging.getLogger(name="log." + __name__)
-logger.set_up(level=logging.INFO)
+custom_logger.set_up(level_string=config.LOGGER_LEVEL)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 
 @app.function_name(name="TimerTrigger")
 @app.schedule(
-    schedule="0 0 * * * *",  # 1st sec, 1st min of every hour
+    schedule="0 0 * * * *",
     arg_name="timer",
     run_on_startup=True,
     use_monitor=False,
 )
-# pylint: disable=unused-argument
-def timer_trigger_api(timer: func.TimerRequest) -> None:
+def timer_trigger_api(timer: func.TimerRequest) -> None:  # pylint: disable=unused-argument
     """
     TimerTrigger function that runs every hour. Sends a message to the internal queue,
     to trigger the ClientTableChecker function.
