@@ -108,7 +108,7 @@ def create_list_of_messages(
         if (
             func_checked_recently(
                 datetime_string=item["last_successfull_download_run"],
-                target_timedelta=re_run_interval,
+                target_timedelta=re_run_interval,  # TODO [KK-232] change re_run_interval to table's Run_frq_hours
             )
             is False
         ):

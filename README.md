@@ -25,7 +25,6 @@ These configuration values should be set in the 'config' module.
 
 ## Testing
 
-Unit tests for the `timer_trigger_api` function are available in the `tests/` directory of the project.
 To run the tests, navigate to the project root directory and run the following command:
 
 ```bash

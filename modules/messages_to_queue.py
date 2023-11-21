@@ -1,10 +1,6 @@
 """Sends a message back to the queue with a scheduled delay (default=120s) set up."""
-import ast
-import datetime
-import json
 import logging
 import os
-from typing import Callable
 
 
 from azure.servicebus import ServiceBusClient, ServiceBusSender, ServiceBusMessage, ServiceBusMessageBatch
@@ -12,32 +8,12 @@ from azure.servicebus import ServiceBusClient, ServiceBusSender, ServiceBusMessa
 log = logging.getLogger(name="log." + __name__)
 
 
-def get_scheduled_enqueue_time_utc(message_str: str, delay_multiplier: int) -> datetime.datetime:
-    """Calculates scheduled enqueue time in UTC from message_str's iteration and delay_multiplier.\n
-    Accepts message_str in both json and literal_eval format
-    .
-    In case of message_str being in literal_eval string message (which would raise ValueError when trying json.loads),
-    tries to parse using ast.literal_eval."""
-
-    try:
-        iteration = json.loads(s=message_str)["iteration"]
-    except ValueError:
-        iteration = ast.literal_eval(node_or_string=message_str)["iteration"]
-
-    return datetime.datetime.utcnow() + datetime.timedelta(minutes=iteration * delay_multiplier)
-
-
-def build_list_of_service_bus_messages(
-    list_of_messages: list, delay_multiplier: int, func_get_scheduled_enqueue_time_utc: Callable
-) -> list[ServiceBusMessage]:
-    """Builds a list of ServiceBusMessages with scheduled enqueue time (a.k.a 'delay')."""
+def build_list_of_service_bus_messages(list_of_messages: list) -> list[ServiceBusMessage]:
+    """Builds a list of ServiceBusMessages."""
 
     list_of_service_bus_messages = []
     for message in list_of_messages:
-        scheduled_enqueue_time_utc = func_get_scheduled_enqueue_time_utc(
-            message_str=message, delay_multiplier=delay_multiplier
-        )
-        service_bus_message = ServiceBusMessage(body=message, scheduled_enqueue_time_utc=scheduled_enqueue_time_utc)
+        service_bus_message = ServiceBusMessage(body=message)
         list_of_service_bus_messages.append(service_bus_message)
 
     log.info(msg=f"Built a list of {len(list_of_service_bus_messages)} messages.")
@@ -61,19 +37,14 @@ def build_batch_message(
     return batch_message
 
 
-def send(
-    list_of_messages: list,
-    delay_multiplier: int = 2,
-) -> None:
+def send(list_of_messages: list) -> None:
     """Sends a scheduled message to specified Service Bus Queue.
-    Sets up a ServiceBusClient, a ServiceBusSender, a ServiceBusMessage and a delay for scheduled message.
-    Delay (in minutes) for scheduled message is calculated as iteration (parsed from message_json) * delay_multiplier.
+    Sets up a ServiceBusClient, a ServiceBusSender, a ServiceBusMessage.
 
     Parameters:
         servicebus_conn_str (str): Service Bus connection string.
         queue_name (str): Queue name.
         message_json (str): Message in json format.
-        delay_multiplier (int): Delay multiplier. Default=10.
         timeout (Optional[int]): Timeout in seconds. Default=120s.
 
     Returns:
@@ -89,11 +60,7 @@ def send(
     with servicebus_client:
         servicebus_sender = servicebus_client.get_queue_sender(queue_name=queue_name)
 
-        list_of_service_bus_messages = build_list_of_service_bus_messages(
-            list_of_messages=list_of_messages,
-            delay_multiplier=delay_multiplier,
-            func_get_scheduled_enqueue_time_utc=get_scheduled_enqueue_time_utc,
-        )
+        list_of_service_bus_messages = build_list_of_service_bus_messages(list_of_messages=list_of_messages)
 
         with servicebus_sender:
             batch_message = build_batch_message(

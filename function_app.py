@@ -28,8 +28,6 @@ def timer_trigger_api(timer: func.TimerRequest) -> None:  # pylint: disable=unus
     TimerTrigger function that runs every hour. Sends a message to the internal queue,
     to trigger the ClientTableChecker function.
     """
-    list_of_messages = list_of_clients.get()
-
     messages_to_queue.send(
-        list_of_messages=list_of_messages,
+        list_of_messages=list_of_clients.get(),
     )

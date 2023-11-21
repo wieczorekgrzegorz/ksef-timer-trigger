@@ -4,6 +4,7 @@
 Mocks environment variables and inserts main app folder to PATH.
 Turns off logging for tested modules.
 """
+import os
 from pathlib import PurePath as path
 import sys
 import unittest
@@ -12,6 +13,11 @@ from unittest.mock import patch
 
 # adding main app folder to PATH
 sys.path.insert(0, str(path(__file__).parents[1]))
+
+
+# Mock env variables
+os.environ["STORAGE_TABLE_CONNECTOR_ACCESS_POINT"] = "https://test.storage.acc"
+os.environ["STORAGE_TABLE_CONNECTOR_API_KEY"] = "test_api_key"
 
 
 class BaseTestCase(unittest.TestCase):

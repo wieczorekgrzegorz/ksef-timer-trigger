@@ -4,7 +4,8 @@ import json
 import unittest
 from unittest.mock import patch, Mock
 
-import context  # pylint: disable=import-error, wrong-import-position
+
+from tests import context  # pylint: disable=import-error, wrong-import-position
 from modules import list_of_clients
 
 
@@ -21,11 +22,9 @@ class TestQueryClientsConfigTable(context.BaseTestCase):  # pylint: disable=too-
         expected_result = {"key": "value"}
 
         result = list_of_clients.query_clients_config_table(
-            storage_acc_access_point="https://test.storage.acc",
             timeout=120,
             headers={"Content-Type": "application/json"},
             request_body='{"query": "SELECT * FROM ClientConfig"}',
-            api_key="test_api_key",
         )
 
         self.assertEqual(first=result, second=expected_result)
@@ -48,11 +47,9 @@ class TestQueryClientsConfigTable(context.BaseTestCase):  # pylint: disable=too-
 
         with self.assertRaises(expected_exception=json.JSONDecodeError) as cm:
             list_of_clients.query_clients_config_table(
-                storage_acc_access_point="https://test.storage.acc",
                 timeout=120,
                 headers={"Content-Type": "application/json"},
                 request_body='{"query": "SELECT * FROM ClientConfig"}',
-                api_key="test_api_key",
             )
             self.assertEqual(first=cm.exception.msg, second=error_msg)
 
@@ -187,6 +184,7 @@ class TestCreateListOfMessages(context.BaseTestCase):
                 "penultimate_successfull_download_run": (
                     datetime.datetime.utcnow() - datetime.timedelta(hours=6)
                 ).isoformat(),
+                "RowKey": "subject2",
             }
         ]
         re_run_interval = datetime.timedelta(hours=2)
@@ -202,6 +200,8 @@ class TestCreateListOfMessages(context.BaseTestCase):
                     "iteration": 0,
                     "query_elem_ref_no": None,
                     "part_elem_ref_no": None,
+                    "direction": "download",
+                    "subject": "subject2",
                 }
             )
         ]
