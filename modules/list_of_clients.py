@@ -2,34 +2,28 @@
 import datetime
 import json
 import logging
-from typing import Callable, Optional
+import os
 import sys
+from typing import Callable, Optional
 
 import requests
 
 log = logging.getLogger(name="log." + __name__)
 
-QUERY_ELEM_REF_NO: None = None
-PART_ELEM_REF_NO: None = None
-ITERATION: int = 0
-HEADERS: dict = {"Content-Type": "application/json"}
-
 
 def query_clients_config_table(
-    storage_acc_access_point: str,
-    timeout: int,
     headers: dict,
     request_body: str,
-    api_key: str,
+    timeout: int = 90,
 ) -> dict:
     """Sends a request to the storage_table_connector function to query the ClientConfig table."""
 
     response = requests.post(
-        url=storage_acc_access_point,
+        url=os.environ["STORAGE_TABLE_CONNECTOR_ACCESS_POINT"],
         timeout=timeout,
         headers=headers,
         data=request_body,
-        params={"code": api_key},  # //TODO remove api_key when moved to Azure AD
+        params={"code": os.environ["STORAGE_TABLE_CONNECTOR_API_KEY"]},  # //TODO remove api_key when moved to Azure AD
     )
     log.debug(msg=f"Received response: {response.content}")
     try:
@@ -104,6 +98,9 @@ def create_list_of_messages(
     Returns:
         list[str]: list of messages in json format to be sent to the sbq-nips-to-check queue.
     """
+    query_elem_ref_no: None = None
+    part_elem_ref_no: None = None
+    iteration: int = 0
 
     list_of_messages = []
 
@@ -121,9 +118,11 @@ def create_list_of_messages(
                     item["last_successfull_download_run"],
                     item["penultimate_successfull_download_run"],
                 ],
-                "iteration": ITERATION,
-                "query_elem_ref_no": QUERY_ELEM_REF_NO,
-                "part_elem_ref_no": PART_ELEM_REF_NO,
+                "iteration": iteration,
+                "query_elem_ref_no": query_elem_ref_no,
+                "part_elem_ref_no": part_elem_ref_no,
+                "direction": "download",
+                "subject": item["RowKey"],
             }
 
             try:
@@ -142,12 +141,6 @@ def create_list_of_messages(
 
 
 def get(  # pylint: disable=R0913:too-many-arguments
-    storage_acc_access_point: str,
-    api_key: str,  # //TODO remove api_key when moved to Azure AD
-    table_name: str = "ClientConfig",
-    operation: str = "get_all",
-    row_key: str = "_zakup",
-    timeout: int = 90,
     re_run_interval: datetime.timedelta = datetime.timedelta(hours=2),
 ) -> list[str]:
     """
@@ -155,12 +148,6 @@ def get(  # pylint: disable=R0913:too-many-arguments
     Returns list of messages in json format.
 
     Parameters:
-        storage_acc_access_point (str): access point to the storage_account_connector function
-        api_key (str): api key for connecting with azure functions #TODO remove api_key when moved to Azure AD
-        table_name (str, optional): name of the table to query. Default: ClientConfig
-        operation (str, optional): operation to perform on the table. Default: get_all
-        row_key (str, optional): row key of the entity to query. Default: _zakup
-        timeout (int, optional): timeout for connecting with storage_account_connector function. Default: 90s
         re_run_interval (datetime.timedelta, optional): interval used to verify whether the client was checked recently.
 
     Returns:
@@ -184,19 +171,16 @@ def get(  # pylint: disable=R0913:too-many-arguments
 
     request_body = json.dumps(
         obj={
-            "operation": operation,
-            "table_name": table_name,
-            "entity": {"RowKey": row_key},
+            "operation": "get_all",
+            "table_name": "ClientConfig",
+            "entity": {"RowKey": os.environ["SUBJECT"]},
         }
     )
 
     log.debug(msg="Querying ClientsConfig for list of NIPs to check.")
     response_json = query_clients_config_table(
-        storage_acc_access_point=storage_acc_access_point,
-        timeout=timeout,
-        headers=HEADERS,
+        headers={"Content-Type": "application/json"},
         request_body=request_body,
-        api_key=api_key,
     )
     log.debug(msg=f"Received response: {response_json}")
 

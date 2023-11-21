@@ -3,6 +3,7 @@ import ast
 import datetime
 import json
 import logging
+import os
 from typing import Callable
 
 
@@ -61,8 +62,6 @@ def build_batch_message(
 
 
 def send(
-    servicebus_conn_str: str,
-    queue_name: str,
     list_of_messages: list,
     delay_multiplier: int = 2,
 ) -> None:
@@ -80,8 +79,12 @@ def send(
     Returns:
         None
     """
+    queue_name = os.environ["SERVICEBUS_QUEUE_NIP_TO_CHECK"]
+
     log.debug(msg=f"Received a request to send {len(list_of_messages)} to queue {queue_name}.")
-    servicebus_client = ServiceBusClient.from_connection_string(conn_str=servicebus_conn_str, logging_enable=True)
+    servicebus_client = ServiceBusClient.from_connection_string(
+        conn_str=os.environ["SERVICEBUS_CONNECTION_STRING"], logging_enable=True
+    )
 
     with servicebus_client:
         servicebus_sender = servicebus_client.get_queue_sender(queue_name=queue_name)
